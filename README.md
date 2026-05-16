@@ -1,120 +1,230 @@
-## Project 1: Build a Web App using ECDSA
+# ECDSA Secure Transaction Web App
 
-This project is an example of using a client and server to facilitate transfers between different addresses. Since there is just a single server on the back-end handling transfers, this is clearly very centralized. We won't worry about distributed consensus for this project.
+A secure, centralized transaction system that leverages **Elliptic Curve Digital Signature Algorithm (ECDSA)** to ensure only account owners can authorize transfers. This application demonstrates cryptographic principles including public key derivation, digital signatures, signature recovery, and nonce-based replay prevention.
 
-However, something that we would like to incorporate is Public Key Cryptography. By using Elliptic Curve Digital Signatures we can make it so the server only allows transfers that have been signed for by the person who owns the associated address.
+## ✨ Features
 
+- **Public Key Cryptography**: Secure address derivation from private keys using secp256k1 elliptic curve
+- **Digital Signatures**: All transactions are signed with the sender's private key
+- **Signature Recovery**: Server recovers the sender's public key from the signature to verify ownership
+- **Replay Attack Prevention**: Nonce-based transaction sequencing prevents double-spending and replays
+- **Real-time Balance Updates**: Immediate feedback on transaction success
+- **Secure Session Management**: Each wallet maintains its own nonce counter
 
-## Setup Instructions
- 
-### Client
+## 🚀 Getting Started
 
-The client folder contains a [react app](https://reactjs.org/) using [vite](https://vitejs.dev/). To get started, follow these steps:
+### Prerequisites
 
-1. Open up a terminal in the `/client` folder
-2. Run `npm install` to install all the dependencies
-3. Run `npm run dev` to start the application 
-4. Now you should be able to visit the app at http://localhost:5173/
+- Node.js v18+ 
+- npm v9+
 
-### Server
+### Installation & Running
 
-The server folder contains a Node.js server using [express](https://expressjs.com/). To run the server, follow these steps:
+**Terminal 1 - Start the Server:**
+```bash
+cd server
+npm install
+node index
+# Or use nodemon for auto-restart: npm i -g nodemon && nodemon index
+```
+Server runs on `http://localhost:3042`
 
-1. Open a terminal within the `/server` folder 
-2. Run `npm install` to install all the dependencies 
-3. Run `node index` to start the server
+**Terminal 2 - Start the Client:**
+```bash
+cd client
+npm install
+npm run dev
+```
+Client runs on `http://localhost:5173`
 
-_Hint_ - > Run `npm i -g nodemon` and then run `nodemon index` instead of `node index` to automatically restart the server on any changes!
+### Test Accounts
 
-The application should connect to the default server port (3042) automatically!
+Three test accounts are pre-funded in the server with the following private keys:
 
-## 🏁 Your Goal: Set Up a Secure ECDSA-based Web Application
+1. **Account 1** (100 units)
+   - Private Key: `0a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef`
 
-Only read this section **AFTER** you've followed the **Setup Instructions** above!
+2. **Account 2** (50 units)
+   - Private Key: `1a2b3c4d5e6f7890123456789abcdef0123456789abcdef0123456789abcdef0`
 
-This project begins with a client that is allowed to transfer any funds from any account to another account. That's not very secure. By applying digital signatures we can require that only the user with the appropriate private key can create a signature that will allow them to move funds from one account to the other. Then, the server can verify the signature to move funds from one account to another.
+3. **Account 3** (75 units)
+   - Private Key: `2a3b4c5d6e7f890123456789abcdef0123456789abcdef0123456789abcdef01`
 
-Your project is considered **done** when you have built the following features in a secure way (NOTE: your project is not final if it still uses private keys anywhere on the client side!):
-- Incorporate public key cryptography so transfers can only be completed with a valid signature
-- The person sending the transaction should have to verify that they own the private key corresponding to the address that is sending funds
+## 📱 How to Use
 
-> 🤔 While you're working through this project consider the security implications of your implementation decisions. What if someone intercepted a valid signature, would they be able to replay that transfer by sending it back to the server?
+1. **Enter your private key** in the "Private Key" field
+2. Your **wallet address** will be automatically derived
+3. Your **current balance** will be fetched from the server
+4. **Enter the recipient address** and **amount** to send
+5. Click **Transfer** to sign and send the transaction
+6. The server validates the signature and nonce, then processes the transfer
 
-## Recommended Approach To Building This Project
+## 🔐 How It Works
 
-There are many ways to approach this project. The goal is to create a client-server webapp that safely validates transaction intents, using public key cryptography, between accounts. Below is a phased approach that clearly details out a roadmap to solving this goal:
+### Phase 1: Basic Setup
+The foundation uses Express.js on the backend and React with Vite on the frontend, with a simple balance tracking system.
 
-### **Phase 1**
-- You have successfully git cloned this project onto your local machine
-- You installed all dependencies by running `npm i` both in the `/client` and in the `/server` folders
-- You have a website running on http://localhost:5173/ by running `npm run dev` in the `/client` folder
-- You have a server process running by running `nodemon index` in the `/server` folder (remember to run `npm i -g nodemon` prior to this)
-- A balance displays on the `Wallet Address` input box when you type in "0x1", "0x2" and "0x3"
-- When you type in "0x1" (or any of the other accounts listed in the `server/index.js` file, you can also send an amount to any other account (using the right-hand column); this action withdraws whatever amount you send from the first account too. You should see these changes in real time, especially if you are using `nodemon` to run your server process
-- Even if you reload the page on http://localhost:5173/, the balance changes you've previously made still remain - this is because it is your server actually keeping track of balances, not your client (ie. your front-end)
+### Phase 2: Public Key Cryptography
+Accounts are represented by their full 65-byte public keys (derived from private keys using the secp256k1 curve). Only users with the correct private key can derive the matching address.
 
-If all of these are complete, move on to **Phase 2**! ⬇️
-
-### **Phase 2**
-
-At this point, our app security is not very good. If we deploy this app now, anyone can access any balance and make changes. This means that Alice (or really.. anyone!) can type in "0x2" and transfer an amount, even if that account is not actually her account! We need to find a way to assign ownership of accounts. 
-
-Let's incorporate some of the cryptography we've learned in the previous lessons to build a half-baked solution; we will use [Ethereum Cryptography library](https://www.npmjs.com/package/ethereum-cryptography/v/1.2.0).
-
-> Please use v1.2.0 of the Ethereum Cryptography library!
-
-Start a new terminal tab and run `npm i ethereum-cryptography@1.2.0` - this will pull down functions to cryptographically sign and verify data.
-
-> Remember, you must run `npm i ethereum-cryptography@1.2.0` in BOTH the `/client` and the `/server` folder!
-
-In **Phase 2**, your job is to implement private keys so that when a user interacts with your application, the ONLY way they are allowed to move funds is if they provide the **private key** of the account they want to move funds from.
-
-The key change is to change the `balances` object in the `/server/index.js` file to use **real public keys**.
-
-You can do this programmatically (by editting the `/server/index.js` file) or using a script with the following functions:
-
+**Key function:**
 ```js
-const secp = require("ethereum-cryptography/secp256k1");
-const { toHex } = require("ethereum-cryptography/utils");
-
-const privateKey = secp.utils.randomPrivateKey();
-
-console.log('private key: ', toHex(privateKey));
-
-const publicKey = secp.getPublicKey(privateKey);
-
-console.log('public key', toHex(publicKey));
+const publicKey = secp.getPublicKey(hexToBytes(privateKey));
 ```
 
-The script above will create a brand new random private key, and then get its equivalent public key, each time you run it.
+### Phase 3: Digital Signatures & Recovery
+Transactions are signed on the client with the sender's private key. The server recovers the sender's public key from the signature to verify they authorized the transaction.
 
-Now you have the foundation to implement public key cryptography into your project!
+**Flow:**
+1. Client creates message: `recipient:amount:nonce`
+2. Client signs the message hash with private key
+3. Server receives: signature, recovery byte, and message
+4. Server recovers public key: `secp.recoverPublicKey(messageHash, signature, recovery)`
+5. Server validates recovered address matches a funded account
+6. Server processes the transfer
 
-To pass **Phase 2**:
+### Phase 4: Replay Prevention with Nonces
+Each account maintains a **nonce** (number used once) that increments with each successful transaction. The nonce is included in every signed message.
 
-- You have replaced "0x1", "0x2" and "0x3" in the `server/index.js` file with actual public keys generated by using the [Ethereum Cryptography library](https://www.npmjs.com/package/ethereum-cryptography/v/1.2.0). These public keys, in this suggested flow, were generated from a randomly generated private key assigned to the user. The method used to generate the public key was: `secp.getPublicKey(privateKey)`.
+**Security benefit:**
+- Even if an attacker intercepts a signed transaction, replaying it fails because the server expects the next nonce
+- Prevents double-spending and ensures transaction ordering
+- Client fetches the current nonce before signing
+- Client increments nonce locally after successful transfer
+- Server validates and increments nonce on transaction success
 
-> Extra credit: Make your accounts look like Ethereum addresses! (ie. instead of the long public key hexadecimal format, use the "0x" + 20 hex characters format of Ethereum - this is a fun challenge to get right!)
+## �️ Project Architecture
 
-- You are able to transfer funds between the addresses, via public keys/addresses of your server's users, that have been generated by inputting a private key into the webapp.
- 
-### **Phase 3**
+### Client-Side (`/client`)
+- **React + Vite**: Fast, modern frontend
+- **Wallet.jsx**: Manages private key input and address derivation
+- **Transfer.jsx**: Handles transaction creation and signing
+- **ethereum-cryptography**: Signs transactions locally
 
-Asking users to input a private key directly into your webapp is a big no-no! 🚫
+### Server-Side (`/server`)
+- **Express.js**: RESTful API server
+- **Balances & Nonces**: Tracks account state
+- **Signature Recovery**: Verifies transaction authenticity
+- **ethereum-cryptography**: Recovers sender from signature
 
-The next step for YOU to accomplish is to make it so that you can send a signed transaction to the server, via your webapp; the server should the authenticate that transaction by deriving the public key associated with it. If that public key has funds, move the funds to the intended recipient. All of this should be accomplished via digital signatures alone.
+## 📡 API Endpoints
 
-Hint: In `index.js`, you will want to:
-- get a signature from the client-side application
-- recover the public address from the signature itself
-- validate the recovered address against your server's `balances` object
+### `GET /balance/:address`
+Returns the balance of an account.
+```
+Response: { balance: number }
+```
 
-To pass **Phase 3**:
+### `GET /nonce/:address`
+Returns the current nonce (transaction counter) for an account.
+```
+Response: { nonce: number }
+```
 
-- Your app is able to validate and move funds using digital signatures.
+### `POST /send`
+Sends a signed transaction. Validates signature and nonce before processing.
+```json
+{
+  "recipient": "0x04...",
+  "amount": 10,
+  "signature": "304502...",
+  "recovery": 0,
+  "message": "0x04...:10:0"
+}
+```
+```
+Response: { balance: number } (new sender balance)
+```
 
-> Hint: https://github.com/paulmillr/noble-secp256k1 is a great library to leverage for this final phase!
+## 📚 Technologies Used
 
-## Sample Solution
+- **[ethereum-cryptography v1.2.0](https://www.npmjs.com/package/ethereum-cryptography/v/1.2.0)**: ECDSA signing and recovery
+- **[secp256k1](https://github.com/paulmillr/noble-secp256k1)**: Elliptic curve cryptography
+- **[Express.js](https://expressjs.com/)**: Backend framework
+- **[React](https://react.dev/)**: Frontend framework
+- **[Vite](https://vitejs.dev/)**: Frontend build tool
 
-Want to peek at a solution while you craft your own? Check [this repo](https://github.com/AlvaroLuken/exchange-secp256k1) out.
+## 🔍 Security Considerations
+
+✅ **Private keys never leave the client**  
+✅ **All transactions are cryptographically signed**  
+✅ **Server cannot forge transactions without private key**  
+✅ **Nonces prevent replay and double-spending attacks**  
+✅ **Signature recovery ensures sender authenticity**  
+
+⚠️ **Limitations (for educational purposes):**
+- Single centralized server (no distributed consensus)
+- No transaction persistence across restarts
+- No encryption for network transport (use TLS in production)
+- Test accounts are hardcoded
+
+## 📖 Implementation Phases
+
+The project was built in four phases of increasing security:
+
+### **Phase 1: Basic Setup** ✅
+- React client with Vite dev server
+- Express.js backend with balance tracking
+- Simple address-based transfers (no security)
+- Real-time balance updates
+
+### **Phase 2: Public Key Cryptography** ✅
+- Real public keys (secp256k1) instead of simple addresses
+- Private key input to derive wallet address
+- Users can only see balances for their derived addresses
+- Foundation for secure account ownership
+
+### **Phase 3: Digital Signatures** ✅
+- Client signs transactions with private key (stays on client!)
+- Server recovers sender's public key from signature
+- `secp.recoverPublicKey()` verifies transaction authenticity
+- No private key exposure to server
+
+### **Phase 4: Replay Prevention** ✅
+- Nonce tracking per account
+- Client fetches nonce before signing
+- Nonce included in signed message: `recipient:amount:nonce`
+- Server validates and increments nonce on success
+- Prevents replay attacks and double-spending
+
+## 🧪 Testing
+
+Test the signed transfer endpoint directly:
+```bash
+node testSignedTransfer.js
+```
+
+This script demonstrates:
+- Private key to public key derivation
+- Message signing with nonce
+- Sending signed transaction to server
+- Verifying balance change
+
+## 📝 File Structure
+
+```
+.
+├── client/
+│   ├── src/
+│   │   ├── App.jsx              # Main component, manages state
+│   │   ├── Wallet.jsx           # Private key input & address derivation
+│   │   ├── Transfer.jsx         # Transaction sending & signing
+│   │   └── index.css
+│   ├── package.json
+│   └── vite.config.js
+├── server/
+│   ├── index.js                 # Express server, balance & nonce tracking
+│   └── package.json
+├── testSignedTransfer.js        # Test script for signed transactions
+└── README.md
+```
+
+## 🎓 Learning Outcomes
+
+By working through this project, you'll understand:
+- **Public Key Cryptography**: How addresses are derived from private keys
+- **Digital Signatures**: How to sign data with ECDSA and verify authenticity
+- **Signature Recovery**: How to recover a public key from a signature
+- **Replay Attack Prevention**: Why nonces are essential for transaction security
+- **Client-Server Security**: How to build secure applications without storing secrets server-side
+
